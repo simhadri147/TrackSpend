@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Update Profile</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5" style="max-width: 500px;">
+  <h4 class="mb-4">Manage Profile Picture</h4>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">
+          {{ msg }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Upload Picture -->
+  <form method="POST" enctype="multipart/form-data" class="mb-3">
+    <div class="mb-3">
+      <label>Upload New Profile Picture</label>
+      <input type="file" name="profile_pic" class="form-control" required>
+    </div>
+    <button class="btn btn-primary">Upload</button>
+  </form>
+
+  <!-- Remove Picture -->
+  {% if session.profile_pic != 'default.png' %}
+  <form method="POST">
+    <input type="hidden" name="remove_pic" value="1">
+    <button class="btn btn-outline-danger">Remove Profile Picture</button>
+  </form>
+  {% endif %}
+</div>
+
+</body>
+</html>

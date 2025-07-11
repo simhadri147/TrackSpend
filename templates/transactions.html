@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Transactions</title>
+  
+  <!-- Bootstrap & Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+
+  <style>
+    .summary-box {
+      background-color: #f8f9fa;
+      border-radius: 1rem;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.05);
+    }
+    .summary-box h5 {
+      font-size: 1.2rem;
+      color: #333;
+    }
+    .summary-box span {
+      font-weight: bold;
+      font-size: 1.3rem;
+      color: #198754;
+    }
+    .summary-box span.expense {
+      color: #dc3545;
+    }
+    .filter-pills button {
+      min-width: 120px;
+    }
+    .table thead {
+      background-color: #0d6efd;
+      color: white;
+    }
+    @media (max-width: 576px) {
+  .btn-group a {
+    margin-bottom: 0.5rem;
+    width: 100%;
+  }
+}
+
+  </style>
+</head>
+
+<body class="bg-light">
+<div class="container py-5">
+
+  
+  <!-- 🔘 Heading + Buttons Row -->
+  <div class="d-flex justify-content-between align-items-center flex-wrap mb-4">
+
+    <!-- 🔽 Title -->
+    <h3 class="mb-2"><i class="bi bi-wallet2"></i> Your Transactions</h3>
+
+    <!-- 🔘 Button Controls -->
+    <div class="d-flex flex-wrap gap-2">
+      
+      <!-- Export Button Form -->
+      <form method="POST" action="/export_transactions" id="exportForm">
+        <input type="hidden" name="from_date" id="export_from_date">
+        <input type="hidden" name="to_date" id="export_to_date">
+        <input type="hidden" name="type" id="export_type">
+        <input type="hidden" name="category" id="export_category">
+        <input type="hidden" name="quick_filter" id="export_quick_filter">
+        
+        <button type="submit" class="btn btn-outline-success rounded-pill px-4">
+          <i class="bi bi-download"></i> Export CSV
+        </button>
+      </form>
+
+
+      <!-- Add Transaction -->
+      <a href="/add_transaction" class="btn btn-primary rounded-pill px-4">
+        <i class="bi bi-plus-circle-fill"></i> Add Transaction
+      </a>
+      <!-- Filter Toggle -->
+      <button class="btn btn-outline-primary rounded-pill px-4" type="button" data-bs-toggle="collapse" data-bs-target="#filterBox">
+        <i class="bi bi-funnel-fill"></i> Advanced Filter
+      </button>
+      <!-- Back to Dashboard -->
+      <a href="/dashboard" class="btn btn-secondary rounded-pill px-4">
+        <i class="bi bi-arrow-left-circle"></i> Dashboard
+      </a>
+
+      
+    </div>
+  </div>
+
+  <!-- 🔘 Quick Filter Pills -->
+  <form method="POST" class="mb-4">
+    <input type="hidden" name="from_date">
+    <input type="hidden" name="to_date">
+    <input type="hidden" name="type">
+    <input type="hidden" name="category">
+
+    <div class="btn-group filter-pills d-flex flex-wrap" role="group">
+      <button type="submit" name="quick_filter" value="today" class="btn btn-outline-primary rounded-pill m-1">Today</button>
+      <button type="submit" name="quick_filter" value="this_week" class="btn btn-outline-primary rounded-pill m-1">This Week</button>
+      <button type="submit" name="quick_filter" value="this_month" class="btn btn-outline-primary rounded-pill m-1">This Month</button>
+      <button type="submit" name="quick_filter" value="this_year" class="btn btn-outline-primary rounded-pill m-1">This Year</button>
+      <a href="/transactions" class="btn btn-outline-secondary rounded-pill m-1">Clear Filters</a>
+    </div>
+  </form>
+
+  <!-- 🔍 Advanced Filter -->
+  <div class="collapse mb-4" id="filterBox">
+    <div class="card card-body shadow-sm">
+      <form method="POST" class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label">From Date</label>
+          <input type="date" name="from_date" class="form-control rounded-pill">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">To Date</label>
+          <input type="date" name="to_date" class="form-control rounded-pill">
+        </div>
+        <div class="col-md-3">
+          <label class="form-label">Type</label>
+          <select name="type" class="form-select rounded-pill">
+            <option value="all">All</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+  <label class="form-label">Category</label>
+  <select name="category" class="form-select rounded-pill">
+    <option value="">All Categories</option>
+    {% for cat in categories %}
+      <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+</div>
+
+        <div class="col-12 text-end">
+          <button class="btn btn-success rounded-pill px-4" type="submit">
+            <i class="bi bi-check-circle-fill"></i> Apply Filters
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 💰 Summary Boxes -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="summary-box">
+        <h5>Total Income</h5>
+        <span>₹{{ total_income }}</span>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="summary-box">
+        <h5>Total Expense</h5>
+        <span class="expense">₹{{ total_expense }}</span>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="summary-box">
+        <h5>Balance</h5>
+        <span>₹{{ balance }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 📊 Transactions Table -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <table class="table table-hover table-bordered mb-0">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Category</th>
+            <th>Note</th>
+          </tr>
+        </thead>
+        <tbody>
+  {% for txn in txns %}
+  <tr>
+    <td>{{ txn.date.strftime('%d-%b-%Y %I:%M %p') if txn.date else '' }}</td>
+
+
+    <td>
+      <span class="badge {{ 'bg-success' if txn.type == 'income' else 'bg-danger' }}">
+        {{ txn.type.title() }}
+      </span>
+    </td>
+    <td>₹{{ txn.amount }}</td>
+    <td>{{ txn.category }}</td>
+    <td class="d-flex justify-content-between align-items-center">
+      <span>{{ txn.note }}</span>
+      <a href="/edit_transaction/{{ txn.id }}" class="btn btn-sm btn-outline-primary ms-2" title="Edit">
+        <i class="bi bi-pencil-square"></i>
+      </a>
+    </td>
+  </tr>
+  {% endfor %}
+</tbody>
+
+      </table>
+    </div>
+  </div>
+
+  
+
+</div>
+
+<!-- JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const copyField = (name) => {
+      const src = document.querySelector(`[name="${name}"]`);
+      const dst = document.getElementById(`export_${name}`);
+      if (src && dst) dst.value = src.value;
+    };
+
+    const form = document.getElementById("exportForm");
+    form.addEventListener("submit", () => {
+      ['from_date', 'to_date', 'type', 'category', 'quick_filter'].forEach(copyField);
+    });
+  });
+</script>
+
+</body>
+</html>
